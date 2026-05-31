@@ -41,7 +41,7 @@ pool.getConnection()
 // --- 1. READ (Lấy toàn bộ danh sách Sinh viên) ---
 app.get('/api/students', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM Student');
+        const [rows] = await pool.query('SELECT * FROM STUDENT');
         res.status(200).json({ success: true, data: rows });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -50,15 +50,15 @@ app.get('/api/students', async (req, res) => {
 
 // --- 2. CREATE (Thêm mới một Sinh viên) ---
 app.post('/api/students', async (req, res) => {
-    const { student_id, full_name, email, phone } = req.body;
+    const { student_id, full_name, email, tutor_id } = req.body;
     
     if (!student_id || !full_name) {
         return res.status(400).json({ success: false, message: 'Thiếu mã SV hoặc họ tên!' });
     }
 
     try {
-        const sql = 'INSERT INTO Student (student_id, full_name, email, phone) VALUES (?, ?, ?, ?)';
-        await pool.query(sql, [student_id, full_name, email, phone]);
+        const sql = 'INSERT INTO STUDENT (SID, SNAME, EMAIL, Tutor_Id) VALUES (?, ?, ?, ?)';
+        await pool.query(sql, [student_id, full_name, email, tutor_id]);
         res.status(201).json({ success: true, message: 'Thêm sinh viên thành công!' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -68,11 +68,11 @@ app.post('/api/students', async (req, res) => {
 // --- 3. UPDATE (Cập nhật thông tin Sinh viên theo mã ID) ---
 app.put('/api/students/:id', async (req, res) => {
     const { id } = req.params;
-    const { full_name, email, phone } = req.body;
+    const { full_name, email, tutor_id } = req.body;
 
     try {
-        const sql = 'UPDATE Student SET full_name = ?, email = ?, phone = ? WHERE student_id = ?';
-        const [result] = await pool.query(sql, [full_name, email, phone, id]);
+        const sql = 'UPDATE STUDENT SET SNAME = ?, EMAIL = ?, Tutor_Id = ? WHERE SID = ?';
+        const [result] = await pool.query(sql, [full_name, email, tutor_id, id]);
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Không tìm thấy sinh viên để cập nhật!' });
@@ -87,16 +87,17 @@ app.put('/api/students/:id', async (req, res) => {
 app.delete('/api/students/:id', async (req, res) => {
     const { id } = req.params;
 
-    try {
-        const sql = 'DELETE FROM Student WHERE student_id = ?';
-        const [result] = await pool.query(sql, [id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy sinh viên để xóa!' });
-        }
-        res.status(200).json({ success: true, message: `Đã xóa sinh viên ${id} thành công!` });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+    try { 
+        await pool.query( 'DELETE FROM STUDENT_ENROLEMENT WHERE SID = ?', [id] ); 
+        const [result] = await pool.query( 'DELETE FROM STUDENT WHERE SID = ?', [id] ); 
+        if (result.affectedRows === 0) { 
+            return res.status(404).json({ 
+                success: false, message: 'Không tìm thấy sinh viên để xóa!' }); 
+            } 
+            res.status(200).json({ success: true, message: `Đã xóa sinh viên ${id} thành công!` }); 
+        } 
+    catch (error) { 
+        res.status(500).json({ success: false, message: error.message }); 
     }
 });
 
