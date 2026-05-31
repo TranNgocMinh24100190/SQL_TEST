@@ -32,17 +32,48 @@ pool.getConnection()
         console.error('❌ Lỗi kết nối Database:', err.message);
         console.error(err);
     });
+// --- TEST DATABASE CONNECTION ---
+app.get('/api/dbconnection', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT 1 AS connected');
 
+        res.status(200).json({
+            success: true,
+            connected: true,
+            result: rows
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            connected: false,
+            message: error.message
+        });
+    }
+});
 
 // ==========================================
 // 4. THỰC HIỆN CRUD CHO ĐỐI TƯỢNG STUDENT
 // ==========================================
 
-// --- 1. READ (Lấy toàn bộ danh sách Sinh viên) ---
+// --- 1. READ (Lấy toàn bộ danh sách Sinh viên và lấy 1 sinh viên theo ID) ---
 app.get('/api/students', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM STUDENT');
         res.status(200).json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.get('/api/students/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const [rows] = await pool.query('SELECT * FROM STUDENT WHERE SID = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Không tìm thấy sinh viên!' });
+        }
+        res.status(200).json({ success: true, data: rows[0] });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
